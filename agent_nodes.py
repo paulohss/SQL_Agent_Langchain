@@ -73,8 +73,9 @@ def check_relevance(state: AgentState, config: RunnableConfig):
     chat_prompt = create_chat_prompt(system_prompt, human_prompt)
     
     # Configure the LLM with structured output
+    #llm = ModelFactory.get_model(provider="llama_ollama",model_name="llama3.1:8b-instruct-q4_0")
     llm = ModelFactory.get_model(provider="openai",model_name="gpt-4o")
-    structured_llm = llm.with_structured_output(CheckRelevance)
+    structured_llm = ModelFactory.with_structured_output(llm, CheckRelevance)
     
     # Create the chain and execute
     relevance_checker = chat_prompt | structured_llm

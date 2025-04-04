@@ -168,3 +168,75 @@
 2025-04-04 13:11:47,192 - INFO - Generating a human-readable answer.
 2025-04-04 13:11:48,385 - INFO - Generated human-readable answer.
 2025-04-04 13:11:48,386 - INFO - ---> Result: Hello Hans Müller, the price for a Pizza Margherita is $12.50.
+2025-04-04 16:04:16,090 - INFO - 
+---> Example 1: 'Tell me a joke.' ---
+2025-04-04 16:04:18,728 - INFO - Retrieving the current user based on user ID.
+2025-04-04 16:04:18,761 - INFO - Current user set to: Hans Müller
+2025-04-04 16:04:18,775 - INFO - Retrieved database schema.
+2025-04-04 16:04:18,776 - INFO - Checking relevance of the question: Tell me a joke.
+2025-04-04 18:01:58,851 - INFO - 
+---> Example 1: 'Tell me a joke.' ---
+2025-04-04 18:02:18,459 - INFO - Retrieving the current user based on user ID.
+2025-04-04 18:02:18,496 - INFO - Current user set to: Hans Müller
+2025-04-04 18:02:18,507 - INFO - Retrieved database schema.
+2025-04-04 18:02:18,507 - INFO - Checking relevance of the question: Tell me a joke.
+2025-04-04 18:06:37,516 - INFO - 
+---> Example 1: 'Tell me a joke.' ---
+2025-04-04 18:06:40,489 - INFO - Retrieving the current user based on user ID.
+2025-04-04 18:06:40,520 - INFO - Current user set to: Hans Müller
+2025-04-04 18:06:40,530 - INFO - Retrieved database schema.
+2025-04-04 18:06:40,530 - INFO - Checking relevance of the question: Tell me a joke.
+2025-04-04 18:06:47,130 - INFO - Using native structured output for ChatOllama
+2025-04-04 18:06:51,280 - WARNING - Native structured output failed: 
+2025-04-04 18:06:52,047 - INFO - Using custom structured output for ChatOllama
+2025-04-04 18:14:00,572 - INFO - 
+---> Example 1: 'Tell me a joke.' ---
+2025-04-04 18:14:04,303 - INFO - Retrieving the current user based on user ID.
+2025-04-04 18:14:04,334 - INFO - Current user set to: Hans Müller
+2025-04-04 18:14:04,347 - INFO - Retrieved database schema.
+2025-04-04 18:14:04,347 - INFO - Checking relevance of the question: Tell me a joke.
+2025-04-04 18:14:08,881 - INFO - Using native structured output for ChatOllama
+2025-04-04 18:14:10,119 - WARNING - Native structured output failed: 
+2025-04-04 18:14:11,322 - INFO - Using custom structured output for ChatOllama
+2025-04-04 18:15:58,866 - INFO - 
+---> Example 1: 'Tell me a joke.' ---
+2025-04-04 18:16:01,350 - INFO - Retrieving the current user based on user ID.
+2025-04-04 18:16:01,372 - INFO - Current user set to: Hans Müller
+2025-04-04 18:16:01,380 - INFO - Retrieved database schema.
+2025-04-04 18:16:01,380 - INFO - Checking relevance of the question: Tell me a joke.
+2025-04-04 18:16:06,176 - INFO - Using native structured output for ChatOllama
+2025-04-04 18:16:06,937 - WARNING - Native structured output failed: 
+2025-04-04 18:16:07,272 - INFO - Using custom structured output for ChatOllama
+2025-04-04 18:17:30,218 - INFO - 
+---> Example 1: 'Tell me a joke.' ---
+2025-04-04 18:17:32,583 - INFO - Retrieving the current user based on user ID.
+2025-04-04 18:17:32,611 - INFO - Current user set to: Hans Müller
+2025-04-04 18:17:32,626 - INFO - Retrieved database schema.
+2025-04-04 18:17:32,626 - INFO - Checking relevance of the question: Tell me a joke.
+2025-04-04 18:17:34,763 - INFO - Using native structured output for ChatOllama
+2025-04-04 18:17:34,764 - WARNING - Native structured output failed: 
+2025-04-04 18:17:34,764 - INFO - Using custom structured output for ChatOllama
+2025-04-04 18:19:54,286 - INFO - 
+---> Example 1: 'Tell me a joke.' ---
+2025-04-04 18:19:56,122 - INFO - Retrieving the current user based on user ID.
+2025-04-04 18:19:56,146 - INFO - Current user set to: Hans Müller
+2025-04-04 18:19:56,157 - INFO - Retrieved database schema.
+2025-04-04 18:19:56,157 - INFO - Checking relevance of the question: Tell me a joke.
+2025-04-04 18:20:01,881 - INFO - Using native structured output for ChatOllama
+2025-04-04 18:20:02,772 - WARNING - Native structured output failed: 
+2025-04-04 18:20:03,064 - INFO - Using custom structured output for ChatOllama
+2025-04-04 18:20:41,080 - ERROR - Error processing chat messages: 'ChatPromptValue' object has no attribute 'update'
+2025-04-04 18:21:39,153 - ERROR - Error parsing response: Failed to parse CheckRelevance from completion {"properties": {"relevance": {"description": "Indicates whether the question is related to the database schema.", "title": "Relevance", "type": "string"}}, "required": ["relevance"], "title": "CheckRelevance", "type": "object"}. Got: 1 validation error for CheckRelevance
+relevance
+  Field required [type=missing, input_value={'properties': {'relevanc...ance', 'type': 'object'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.10/v/missing
+For troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE 
+2025-04-04 18:21:39,697 - ERROR - Response content: {"properties": {"relevance": {"description": "Indicates whether the question is related to the database schema.", "title": "Relevance", "type": "string"}}, "required": ["relevance"], "title": "CheckRelevance", "type": "object"}
+2025-04-04 18:23:02,348 - INFO - 
+---> Example 1: 'Tell me a joke.' ---
+2025-04-04 18:23:04,384 - INFO - Retrieving the current user based on user ID.
+2025-04-04 18:23:04,409 - INFO - Current user set to: Hans Müller
+2025-04-04 18:23:04,418 - INFO - Retrieved database schema.
+2025-04-04 18:23:04,418 - INFO - Checking relevance of the question: Tell me a joke.
+2025-04-04 18:23:10,307 - INFO - Using native structured output for ChatOpenAI
+2025-04-04 18:23:14,619 - INFO - Relevance determined: not_relevant
