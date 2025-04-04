@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
+from util.logger import log 
 
 # Create engine and session
 engine = create_engine('sqlite:///example.db')
@@ -9,9 +10,9 @@ SessionLocal = sessionmaker(bind=engine)
 # Get database schema
 # ------------------------------------------------
 def get_database_schema():
-    """Extract and format database schema information for LLM context"""
     inspector = inspect(engine)
     schema = ""
+    
     for table_name in inspector.get_table_names():
         schema += f"Table: {table_name}\n"
         for column in inspector.get_columns(table_name):
@@ -24,5 +25,7 @@ def get_database_schema():
                 col_type += f", Foreign Key to {fk.column.table.name}.{fk.column.name}"
             schema += f"- {col_name}: {col_type}\n"
         schema += "\n"
-    print("Retrieved database schema.")
+    
+    log.info("Retrieved database schema.")
+    
     return schema

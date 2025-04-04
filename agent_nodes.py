@@ -4,23 +4,32 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from sqlalchemy import text
 from langchain_core.runnables import RunnableConfig
-
+from model_factory import ModelFactory
 from db_utils import SessionLocal, get_database_schema
 from agent_state import AgentState, GetCurrentUser, CheckRelevance, ConvertToSQL, RewrittenQuestion
 from model.user import User
+from util.logger import log 
 
+#------------------------------------------------------------------------
+# Create a chat prompt template for checking relevance
+#------------------------------------------------------------------------
+def create_chat_prompt(system_prompt, human_prompt):
+    check_prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("human", human_prompt),
+    ])    
+    return check_prompt
 
 #-------------------------------------------------------------------------
 # Retrieve current user information based on user ID in config
 #-------------------------------------------------------------------------
 def get_current_user(state: AgentState, config: RunnableConfig):
-    """Retrieve current user information based on user ID in config"""
-    print("Retrieving the current user based on user ID.")
+    log.info("Retrieving the current user based on user ID.")
     user_id = config["configurable"].get("current_user_id", None)
     
     if not user_id:
         state["current_user"] = "User not found"
-        print("No user ID provided in the configuration.")
+        log.info("No user ID provided in the configuration.")
         return state
 
     session = SessionLocal()
@@ -28,13 +37,13 @@ def get_current_user(state: AgentState, config: RunnableConfig):
         user = session.query(User).filter(User.id == int(user_id)).first()
         if user:
             state["current_user"] = user.name
-            print(f"Current user set to: {state['current_user']}")
+            log.info(f"Current user set to: {state['current_user']}")
         else:
             state["current_user"] = "User not found"
-            print("User not found in the database.")
+            log.info("User not found in the database.")
     except Exception as e:
         state["current_user"] = "Error retrieving user"
-        print(f"Error retrieving user: {str(e)}")
+        log.info(f"Error retrieving user: {str(e)}")
     finally:
         session.close()
     
@@ -47,7 +56,7 @@ def get_current_user(state: AgentState, config: RunnableConfig):
 def check_relevance(state: AgentState, config: RunnableConfig):
     question = state["question"]
     schema = get_database_schema()
-    print(f"Checking relevance of the question: {question}")
+    log.info(f"Checking relevance of the question: {question}")
     
     # Define the system prompt with proper formatting
     system_prompt = """
@@ -61,22 +70,19 @@ def check_relevance(state: AgentState, config: RunnableConfig):
     human_prompt = f"Question: {question}"
     
     # Build the prompt template
-    check_prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", human_prompt),
-    ])
+    chat_prompt = create_chat_prompt(system_prompt, human_prompt)
     
     # Configure the LLM with structured output
-    llm = ChatOpenAI(temperature=0, model="gpt-4o")
+    llm = ModelFactory.get_model(provider="openai",model_name="gpt-4o")
     structured_llm = llm.with_structured_output(CheckRelevance)
     
     # Create the chain and execute
-    relevance_checker = check_prompt | structured_llm
+    relevance_checker = chat_prompt | structured_llm
     relevance = relevance_checker.invoke({})
     
     # Update state with result
     state["relevance"] = relevance.relevance
-    print(f"Relevance determined: {state['relevance']}")
+    log.info(f"Relevance determined: {state['relevance']}")
     
     return state
 
@@ -88,7 +94,7 @@ def convert_nl_to_sql(state: AgentState, config: RunnableConfig):
     question = state["question"]
     current_user = state["current_user"]
     schema = get_database_schema()
-    print(f"Converting question to SQL for user '{current_user}': {question}")
+    log.info(f"Converting question to SQL for user '{current_user}': {question}")
     
     # Define the system prompt with proper formatting
     system_prompt = """
@@ -99,23 +105,22 @@ def convert_nl_to_sql(state: AgentState, config: RunnableConfig):
     For example, alias 'food.name' as 'food_name' and 'food.price' as 'price'.
     """.format(schema=schema, current_user=current_user).strip()
     
+    human_prompt = f"Question: {question}"
+     
     # Build the prompt template
-    convert_prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", "Question: {question}"),
-    ])
+    chat_prompt = create_chat_prompt(system_prompt, human_prompt)
     
     # Configure the LLM with structured output
-    llm = ChatOpenAI(temperature=0, model="gpt-4o")
+    llm = ModelFactory.get_model(provider="openai",model_name="gpt-4o")
     structured_llm = llm.with_structured_output(ConvertToSQL)
     
     # Create the chain and execute
-    sql_generator = convert_prompt | structured_llm
+    sql_generator = chat_prompt | structured_llm
     result = sql_generator.invoke({"question": question})
     
     # Update state with result
     state["sql_query"] = result.sql_query
-    print(f"Generated SQL query: {state['sql_query']}")
+    log.info(f"Generated SQL query: {state['sql_query']}")
     
     return state
 
@@ -124,10 +129,9 @@ def convert_nl_to_sql(state: AgentState, config: RunnableConfig):
 # Execute SQL query against the database
 #-------------------------------------------------------------------------
 def execute_sql(state: AgentState):
-    """Execute SQL query against the database"""
     sql_query = state["sql_query"].strip()
     session = SessionLocal()
-    print(f"Executing SQL query: {sql_query}")
+    log.info(f"Executing SQL query: {sql_query}")
     
     try:
         result = session.execute(text(sql_query))
@@ -139,7 +143,7 @@ def execute_sql(state: AgentState):
             if rows:
                 header = ", ".join(columns)
                 state["query_rows"] = [dict(zip(columns, row)) for row in rows]
-                print(f"Raw SQL Query Result: {state['query_rows']}")
+                log.info(f"Raw SQL Query Result: {state['query_rows']}")
                 
                 # Format the result for readability
                 data = "; ".join([
@@ -153,16 +157,18 @@ def execute_sql(state: AgentState):
                 
             state["query_result"] = formatted_result
             state["sql_error"] = False
-            print("SQL SELECT query executed successfully.")
+            log.info("SQL SELECT query executed successfully.")
         else:
             session.commit()
             state["query_result"] = "The action has been successfully completed."
             state["sql_error"] = False
-            print("SQL command executed successfully.")
+            log.info("SQL command executed successfully.")
+            
+            
     except Exception as e:
         state["query_result"] = f"Error executing SQL query: {str(e)}"
         state["sql_error"] = True
-        print(f"Error executing SQL query: {str(e)}")
+        log.error(f"Error executing SQL query: {str(e)}")
     finally:
         session.close()
         
@@ -173,13 +179,12 @@ def execute_sql(state: AgentState):
 # Generate natural language response from SQL query results
 #-------------------------------------------------------------------------
 def generate_human_readable_answer(state: AgentState):
-    """Generate natural language response from SQL query results"""
     sql = state["sql_query"]
     result = state["query_result"]
     current_user = state["current_user"]
     query_rows = state.get("query_rows", [])
     sql_error = state.get("sql_error", False)
-    print("Generating a human-readable answer.")
+    log.info("Generating a human-readable answer.")
     
     # Define the base system prompt
     system_prompt = """
@@ -201,6 +206,7 @@ def generate_human_readable_answer(state: AgentState):
         Formulate a clear and understandable error message in a single sentence, 
         starting with 'Hello {current_user},' informing them about the issue.
         """.strip()
+        
     elif sql.lower().startswith("select"):
         if not query_rows:
             # No results case
@@ -214,6 +220,7 @@ def generate_human_readable_answer(state: AgentState):
             Formulate a clear and understandable answer to the original question in a single sentence, 
             starting with 'Hello {current_user},' and mention that there are no orders found.
             """.strip()
+            
         else:
             # Displaying orders case
             human_prompt = f"""
@@ -224,9 +231,9 @@ def generate_human_readable_answer(state: AgentState):
             {result}
             
             Formulate a clear and understandable answer to the original question in a single sentence, 
-            starting with 'Hello {current_user},' and list each item ordered along with its price. 
-            For example: 'Hello Bob, you have ordered Lasagne for $14.0 and Spaghetti Carbonara for $15.0.'
+            starting with 'Hello {current_user},' and list each item ordered along with its price.             
             """.strip()
+            
     else:
         # Non-select query confirmation
         human_prompt = f"""
@@ -241,19 +248,16 @@ def generate_human_readable_answer(state: AgentState):
         """.strip()
 
     # Create the prompt template
-    generate_prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", human_prompt),
-    ])
+    generate_prompt = create_chat_prompt(system_prompt, human_prompt)
     
     # Configure and execute the LLM
-    llm = ChatOpenAI(temperature=0, model="gpt-4o")
+    llm = ModelFactory.get_model(provider="openai",model_name="gpt-4o")
     human_response = generate_prompt | llm | StrOutputParser()
     answer = human_response.invoke({})
     
     # Update state with result
     state["query_result"] = answer
-    print("Generated human-readable answer.")
+    log.info("Generated human-readable answer.")
     
     return state
 
@@ -262,9 +266,8 @@ def generate_human_readable_answer(state: AgentState):
 # Rewrite the question to improve SQL generation on failure
 #-------------------------------------------------------------------------
 def regenerate_query(state: AgentState):
-    """Rewrite the question to improve SQL generation on failure"""
     question = state["question"]
-    print("Regenerating the SQL query by rewriting the question.")
+    log.info("Regenerating the SQL query by rewriting the question.")
     
     # Define the system prompt
     system_prompt = """
@@ -279,13 +282,11 @@ def regenerate_query(state: AgentState):
     """.strip()
     
     # Create the prompt template
-    rewrite_prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", human_prompt),
-    ])
+    rewrite_prompt = create_chat_prompt(system_prompt, human_prompt)
+    
     
     # Configure the LLM with structured output
-    llm = ChatOpenAI(temperature=0, model="gpt-4o")
+    llm = ModelFactory.get_model(provider="openai",model_name="gpt-4o")
     structured_llm = llm.with_structured_output(RewrittenQuestion)
     
     # Create the chain and execute
@@ -295,7 +296,7 @@ def regenerate_query(state: AgentState):
     # Update state with result
     state["question"] = rewritten.question
     state["attempts"] += 1
-    print(f"Rewritten question: {state['question']}")
+    log.info(f"Rewritten question: {state['question']}")
     
     return state
 
@@ -304,12 +305,12 @@ def regenerate_query(state: AgentState):
 # Generate humorous response for irrelevant questions
 #-------------------------------------------------------------------------
 def generate_funny_response(state: AgentState):
-    """Generate humorous response for irrelevant questions"""
-    print("Generating a funny response for an unrelated question.")
+    log.info("Generating a funny response for an unrelated question.")
     
     # Define the system prompt
     system_prompt = """
     You are a charming and funny assistant who responds in a playful manner.
+    DO NOT use emojis or any other symbols in your response.
     """.strip()
     
     # Define the human message
@@ -319,19 +320,16 @@ def generate_funny_response(state: AgentState):
     """.strip()
     
     # Create the prompt template
-    funny_prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", human_message),
-    ])
+    funny_prompt = create_chat_prompt(system_prompt, human_message)
     
     # Configure and execute the LLM
-    llm = ChatOpenAI(temperature=0.7, model="gpt-4o")
+    llm = ModelFactory.get_model(provider="openai",model_name="gpt-4o")
     funny_response = funny_prompt | llm | StrOutputParser()
     message = funny_response.invoke({})
     
     # Update state with result
     state["query_result"] = message
-    print("Generated funny response.")
+    log.info("Generated funny response.")
     
     return state
 
@@ -340,7 +338,6 @@ def generate_funny_response(state: AgentState):
 # Handle maximum iterations reached
 #-------------------------------------------------------------------------
 def end_max_iterations(state: AgentState):
-    """Handle maximum iterations reached"""
     state["query_result"] = "Please try again."
-    print("Maximum attempts reached. Ending the workflow.")
+    log.info("Maximum attempts reached. Ending the workflow.")
     return state

@@ -1,6 +1,7 @@
 from workflow import app
 from dotenv import load_dotenv
 import os
+from util.logger import log 
 
 # Load environment variables for API keys
 load_dotenv()
@@ -24,12 +25,12 @@ def main():
     
     # Run examples
     for i, question in enumerate(examples):
-        print(f"\n---> Example {i+1}: '{question}' ---")
+        log.infoAndPrint(f"\n---> Example {i+1}: '{question}' ---")
         result = app.invoke(
             {"question": question, "attempts": 0}, 
             config=fake_config
         )
-        print(f"---> Result: {result['query_result']}")
+        log.infoAndPrint(f"---> Result: {result['query_result']}")
 
 if __name__ == "__main__":
     main()
